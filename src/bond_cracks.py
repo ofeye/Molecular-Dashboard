@@ -48,7 +48,7 @@ def get_atom_data(surface1, surface2, a_val, h_perc, k_val, time_step, cutoff):
     return now_positions, cracked_bond_coords
 
 def get_atom_data_or_cache(surface1, surface2, a_val, h_perc, k_val, time_step, cutoff, force_recalculate=False):
-    key = generate_key(surface1, surface2, a_val, h_perc, k_val, 0)
+    key = generate_key(surface1, surface2, a_val, h_perc, k_val, time_step)+f'_{str(cutoff).replace(".","")}'
 
     if not force_recalculate:
         results = load_results(key,'bond_crack')
@@ -56,6 +56,6 @@ def get_atom_data_or_cache(surface1, surface2, a_val, h_perc, k_val, time_step, 
         if results is not None:
             return results
     # print('but you are here')
-    now_positions, cracked_bond_coords = get_atom_data(surface1, surface2, a_val, h_perc, k_val, time_step, cutoff)
+    now_positions, cracked_bond_coords = get_atom_data(surface1, surface2, a_val, h_perc, k_val, time_step, cutoff/(2*a_val))
     save_results(key, (now_positions, cracked_bond_coords),'bond_crack')
     return now_positions, cracked_bond_coords

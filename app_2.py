@@ -14,7 +14,6 @@ from scripts.utils.file_utils import read_json_file
 from scripts.data_processing.create_dataset import save_dataset
 import dash_bootstrap_components as dbc
 import math
-import json
 
 
 def get_app(update_dateset = False):
@@ -170,7 +169,7 @@ def get_app(update_dateset = False):
             )])
             
         elif view_mode == 'bond_crack':
-            positions, cracked_bond_coords = get_atom_data_or_cache(surface1, surface2, a_val, h_perc, k_val, time_step, cutoff/(2*a_val))
+            positions, cracked_bond_coords = get_atom_data_or_cache(surface1, surface2, a_val, h_perc, k_val, time_step, cutoff)
                         
             # Create color array
             colors = ['red' if tuple(pos) not in [tuple(c) for c in cracked_bond_coords] else 'blue' for pos in positions]
@@ -211,9 +210,9 @@ def get_app(update_dateset = False):
                 ),
                 title=f'TPMS Visualization: {surface1.capitalize()} + {surface2.capitalize()}',
                 scene_camera=dict(
-                    up=dict(x=0, y=1, z=0),
+                    up=dict(x=0, y=1e-5, z=0),
                     center=dict(x=0, y=0, z=0),
-                    eye=dict(x=0, y=0, z=2)
+                    eye=dict(x=0, y=0, z=0.1)
                 )
             )
         elif view == 'XZ':
@@ -228,7 +227,7 @@ def get_app(update_dateset = False):
                 scene_camera=dict(
                     up=dict(x=0, y=0, z=1),
                     center=dict(x=0, y=0, z=0),
-                    eye=dict(x=0, y=2.5, z=0)
+                    eye=dict(x=0, y=0.1, z=0)
                 )
             )
             
@@ -244,7 +243,7 @@ def get_app(update_dateset = False):
                 scene_camera=dict(
                     up=dict(x=0, y=0, z=1),
                     center=dict(x=0, y=0, z=0),
-                    eye=dict(x=2, y=0, z=0)
+                    eye=dict(x=0.1, y=0, z=0)
                 )
             )
         fig.layout.scene.camera.projection.type = "orthographic"

@@ -198,7 +198,8 @@ def get_app(update_dateset = False):
                 xaxis=dict(range=[0, 1]),
                 title=f'Atom Visualization (Time Step: {time_step})'
             )
-        
+        fig.layout.scene.camera.projection.type = "orthographic"
+        fig.update_layout(margin={'t':0,'l':0,'b':0,'r':0})
         if view == 'XY':
             fig.update_layout(
                 scene=dict(
@@ -245,7 +246,7 @@ def get_app(update_dateset = False):
                     eye=dict(x=0.1, y=0, z=0)
                 )
             )
-        fig.layout.scene.camera.projection.type = "orthographic"
+        
         return fig
 
     @app.callback(
@@ -317,7 +318,8 @@ def get_app(update_dateset = False):
                 y=df_filtered[highlight_mask][y],
                 mode='markers',
                 marker=dict(size=15, color='red', symbol='star'),
-                name='Selected Model'
+                name='Selected Model',
+                # legend={"x": 0.9,"y": 0.9,"xref": "container","yref": "container","bgcolor": "Gold",}
             ))
             
             if y.startswith("norm_dens"):

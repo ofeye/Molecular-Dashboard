@@ -27,6 +27,11 @@ def update_figure_layout(fig, x_range, y_range, color_range, x_title, y_title, u
         xaxis=dict(range=x_range, type=axis_type, title=x_title),
         yaxis=dict(range=y_range, type=axis_type, title=y_title),
         coloraxis=dict(cmin=color_range[0], cmax=color_range[1]),
+        coloraxis_colorbar=dict(
+            x=1,  # Colorbar'ı grafikten daha sağa kaydırmak için x ekseni konumu
+            y=0.47,  # Colorbar'ın y ekseni boyunca ortalanması
+            len=0.97  # Colorbar'ın boyunu ayarlama (0-1 arasında)
+        ),
         font=dict(family="Times New Roman", size=20),
         template='none'
     )

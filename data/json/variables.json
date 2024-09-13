@@ -1,0 +1,7 @@
+{
+    "analysis_files": "/Volumes/ofeye_external/01. ITU/02. Makale Çalışmaları/04. Analysis Files/02. Tamamlanmış",
+    "database": "data/database/out_2024_01_25_19_15_21.csv",
+    "keylist": ["Private_Key","Hybrid","Geom1","Geom2","length","k_Value","Hybrid_Perc","NonHyb_Cell_Count","Hyb_Cell_Count","TotalAtom",
+    "DimLow","DimHigh","Volume","Density","Norm_Density","Max_Stress","Norm_Stress","Strain_At_Max_Stress","Strain_At_SSR",
+    "Stress_At_SSR","Young_Modulus","Norm_Young_Modulus","Folder","Geom_File","Stress_File"]
+}

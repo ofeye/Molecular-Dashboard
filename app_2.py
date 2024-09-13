@@ -4,7 +4,6 @@ from dash.dependencies import Input, Output, State
 import plotly.graph_objs as go
 import plotly.express as px
 import pandas as pd
-import numpy as np
 from src.tpms_calculation import get_or_calculate_tpms
 from src.bond_cracks import get_atom_data_or_cache
 from scripts.utils.mathematical import my_ceil, my_ceil_2, my_floor, my_floor_2

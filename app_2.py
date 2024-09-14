@@ -4,6 +4,10 @@ from dash.dependencies import Input, Output, State
 import plotly.graph_objs as go
 import plotly.express as px
 import pandas as pd
+import dash_bootstrap_components as dbc
+import math
+import time
+
 from src.tpms_calculation import get_or_calculate_tpms
 from src.bond_cracks import get_atom_data_or_cache
 from scripts.utils.mathematical import my_ceil, my_ceil_2, my_floor, my_floor_2
@@ -11,8 +15,7 @@ from scripts.data_processing.highlighted_mask import highlighted_mask
 from scripts.utils.figure_create import create_figure, update_figure_layout
 from scripts.utils.file_utils import read_json_file
 from scripts.data_processing.create_dataset import save_dataset
-import dash_bootstrap_components as dbc
-import math
+from scripts.multi_processing.bond_crack import update_3d_graph_bond_crack
 
 
 def get_app(update_dateset = False):
@@ -67,7 +70,11 @@ def get_app(update_dateset = False):
                 html.Br(),
                 
                 html.Label("Time Step:"),
-                dcc.Input(id='time-step', type='number', value=2, min=2),
+                dcc.Slider(id='time-step-slider', value=2, min=2, max=25, step=1, marks={i: str(i) for i in range(2, 26, 5)}),
+                dcc.Input(id='time-step-input', type='number', value=2, min=2, max=25, step=1),
+                
+                html.Button('Play', id='play-button', n_clicks=0),
+                dcc.Interval(id='play-interval', interval=1000, disabled=True),
                 
                 html.Button('Update', id='update-button', n_clicks=0)
             ], width=3),
@@ -117,137 +124,151 @@ def get_app(update_dateset = False):
             dbc.Col(dcc.Graph(id="energy-scatter_2"), width=6),
         ]),
     ], fluid=True)
+    @app.callback(
+        [Output('time-step-slider', 'value'),
+         Output('time-step-input', 'value')],
+        [Input('time-step-slider', 'value'),
+         Input('time-step-input', 'value'),
+         Input('play-interval', 'n_intervals')],
+        [State('time-step-slider', 'max')]
+    )
+    def sync_time_step(slider_value, input_value, n_intervals, max_value):
+        ctx = dash.callback_context
+        trigger_id = ctx.triggered[0]['prop_id'].split('.')[0]
+        
+        if trigger_id == 'time-step-slider':
+            return slider_value, slider_value
+        elif trigger_id == 'time-step-input':
+            return input_value, input_value
+        elif trigger_id == 'play-interval':
+            new_value = min(slider_value + 1, max_value)
+            return new_value, new_value
+        
+        return dash.no_update, dash.no_update
+
+    @app.callback(
+        [Output('play-interval', 'disabled'),
+         Output('play-button', 'children')],
+        [Input('play-button', 'n_clicks')],
+        [State('play-interval', 'disabled')]
+    )
+    def toggle_play(n_clicks, current_state):
+        if n_clicks:
+            return not current_state, 'Pause' if current_state else 'Play'
+        return dash.no_update, dash.no_update
 
     @app.callback(
         Output('tpms-plot', 'figure'),
         [Input('update-button', 'n_clicks'),
-        Input('view-mode-tabs', 'value')],
+         Input('view-mode-tabs', 'value'),
+         Input('time-step-slider', 'value'),
+         Input('play-interval', 'n_intervals')],
         [State('surface1', 'value'),
-        State('surface2', 'value'),
-        State('a-val', 'value'),
-        State('h_perc', 'value'),
-        State('k-val', 'value'),
-        State('grid-size', 'value'),
-        State('view', 'value'),
-        State('color-by', 'value'),
-        State('legend-min', 'value'),
-        State('legend-max', 'value'),
-        State('time-step', 'value'),
-        State('cutoff', 'value')]
+         State('surface2', 'value'),
+         State('a-val', 'value'),
+         State('h_perc', 'value'),
+         State('k-val', 'value'),
+         State('grid-size', 'value'),
+         State('view', 'value'),
+         State('color-by', 'value'),
+         State('legend-min', 'value'),
+         State('legend-max', 'value'),
+         State('cutoff', 'value')]
     )
-    def update_3d_graph(n_clicks, view_mode, surface1, surface2, a_val, h_perc, k_val, grid_size, view, colorize, legend_min, legend_max, time_step, cutoff):
-        if view_mode == 'curvature':
-            surface, curvatures = get_or_calculate_tpms(surface1, surface2, a_val, h_perc, k_val, grid_size)
-            
-            vertices = surface.points
-            faces = surface.faces.reshape(-1, 4)[:, 1:4]            
+    def update_3d_graph(n_clicks, view_mode, time_step, n_intervals, surface1, surface2, a_val, h_perc, k_val, grid_size, view, colorize, legend_min, legend_max, cutoff):
+        ctx = dash.callback_context
+        if not ctx.triggered:
+            return dash.no_update
+    
+        trigger_id = ctx.triggered[0]['prop_id'].split('.')[0]
 
-            if colorize == 'Abs':
-                curvatures = abs(curvatures)
-            # Legend aralığını ayarla
-            zmin = legend_min if legend_min is not None else min(curvatures)
-            zmax = legend_max if legend_max is not None else max(curvatures)
+        # Play interval veya diğer inputlar tarafından tetiklendiğinde grafiği güncelle
+        if trigger_id in ['update-button', 'view-mode-tabs', 'time-step-slider', 'play-interval']:
+            if view_mode == 'curvature':
+                surface, curvatures = get_or_calculate_tpms(surface1, surface2, a_val, h_perc, k_val, grid_size)
+                
+                vertices = surface.points
+                faces = surface.faces.reshape(-1, 4)[:, 1:4]            
 
-            data_to_plot = curvatures  # Curvature verisini kullan
-            colorbar_title = 'Mean Curvature'
-            
-            fig = go.Figure(data=[go.Mesh3d(
-                x=vertices[:, 0],
-                y=vertices[:, 1],
-                z=vertices[:, 2],
-                i=faces[:, 0],
-                j=faces[:, 1],
-                k=faces[:, 2],
-                intensity=data_to_plot,
-                colorscale='Jet',
-                opacity=1,
-                colorbar=dict(title=colorbar_title),
-                lighting=dict(ambient=0.6, diffuse=0.5, specular=0.1, fresnel=0.1),
-                cmin=zmin,
-                cmax=zmax,
-            )])
-            
-        elif view_mode == 'bond_crack':
-            positions, cracked_bond_coords = get_atom_data_or_cache(surface1, surface2, a_val, h_perc, k_val, time_step, cutoff)
-                        
-            # Create color array
-            colors = ['red' if tuple(pos) not in [tuple(c) for c in cracked_bond_coords] else 'blue' for pos in positions]
-            sizes = [3 if tuple(pos) not in [tuple(c) for c in cracked_bond_coords] else 7 for pos in positions]
+                if colorize == 'Abs':
+                    curvatures = abs(curvatures)
+                zmin = legend_min if legend_min is not None else min(curvatures)
+                zmax = legend_max if legend_max is not None else max(curvatures)
 
-            fig = go.Figure(data=[go.Scatter3d(
-                x=positions[:, 0],
-                y=positions[:, 1],
-                z=positions[:, 2],
-                mode='markers',
-                marker=dict(
-                    size=sizes,
-                    color=colors,
-                    opacity=0.5
-                ),
-                text=[f"Atom at {tuple(pos)}: {'Cracked' if tuple(pos) in [tuple(c) for c in cracked_bond_coords] else 'Normal'}" for pos in positions],
-                hoverinfo='text'
-            )])
-            fig.update_layout(
-                scene=dict(
-                    xaxis_title='X',
-                    yaxis_title='Y',
-                    zaxis_title='Z',
-                    aspectmode='cube'
-                ),
-                yaxis=dict(range=[0, 1]),
-                xaxis=dict(range=[0, 1]),
-                title=f'Atom Visualization (Time Step: {time_step})'
-            )
-        fig.layout.scene.camera.projection.type = "orthographic"
-        fig.update_layout(margin={'t':0,'l':0,'b':0,'r':0})
-        if view == 'XY':
-            fig.update_layout(
-                scene=dict(
-                    xaxis_title='X',
-                    yaxis_title='Y',
-                    zaxis_title='Z',
-                    aspectmode='data'
-                ),
-                title=f'TPMS Visualization: {surface1.capitalize()} + {surface2.capitalize()}',
-                scene_camera=dict(
-                    up=dict(x=0, y=1e-5, z=0),
-                    center=dict(x=0, y=0, z=0),
-                    eye=dict(x=0, y=0, z=0.1)
-                )
-            )
-        elif view == 'XZ':
-            fig.update_layout(
-                scene=dict(
-                    xaxis_title='X',
-                    yaxis_title='Y',
-                    zaxis_title='Z',
-                    aspectmode='data'
-                ),
-                title=f'TPMS Visualization: {surface1.capitalize()} + {surface2.capitalize()}',
-                scene_camera=dict(
-                    up=dict(x=0, y=0, z=1),
-                    center=dict(x=0, y=0, z=0),
-                    eye=dict(x=0, y=0.1, z=0)
-                )
-            )
+                data_to_plot = curvatures
+                colorbar_title = 'Mean Curvature'
+                
+                fig = go.Figure(data=[go.Mesh3d(
+                    x=vertices[:, 0],
+                    y=vertices[:, 1],
+                    z=vertices[:, 2],
+                    i=faces[:, 0],
+                    j=faces[:, 1],
+                    k=faces[:, 2],
+                    intensity=data_to_plot,
+                    colorscale='Jet',
+                    opacity=1,
+                    colorbar=dict(title=colorbar_title),
+                    lighting=dict(ambient=0.6, diffuse=0.5, specular=0.1, fresnel=0.1),
+                    cmin=zmin,
+                    cmax=zmax,
+                )])
+                
+            elif view_mode == 'bond_crack':
+                fig = update_3d_graph_bond_crack(surface1, surface2, a_val, h_perc, k_val, time_step, cutoff)
             
-        elif view == 'YZ':
-            fig.update_layout(
-                scene=dict(
-                    xaxis_title='X',
-                    yaxis_title='Y',
-                    zaxis_title='Z',
-                    aspectmode='data'
-                ),
-                title=f'TPMS Visualization: {surface1.capitalize()} + {surface2.capitalize()}',
-                scene_camera=dict(
-                    up=dict(x=0, y=0, z=1),
-                    center=dict(x=0, y=0, z=0),
-                    eye=dict(x=0.1, y=0, z=0)
+            fig.layout.scene.camera.projection.type = "orthographic"
+            fig.update_layout(margin={'t':0,'l':0,'b':0,'r':0})
+            
+            if view == 'XY':
+                fig.update_layout(
+                    scene=dict(
+                        xaxis_title='X',
+                        yaxis_title='Y',
+                        zaxis_title='Z',
+                        aspectmode='data'
+                    ),
+                    title=f'TPMS Visualization: {surface1.capitalize()} + {surface2.capitalize()}',
+                    scene_camera=dict(
+                        up=dict(x=0, y=1e-5, z=0),
+                        center=dict(x=0, y=0, z=0),
+                        eye=dict(x=0, y=0, z=0.1)
+                    )
                 )
-            )
-        
-        return fig
+            elif view == 'XZ':
+                fig.update_layout(
+                    scene=dict(
+                        xaxis_title='X',
+                        yaxis_title='Y',
+                        zaxis_title='Z',
+                        aspectmode='data'
+                    ),
+                    title=f'TPMS Visualization: {surface1.capitalize()} + {surface2.capitalize()}',
+                    scene_camera=dict(
+                        up=dict(x=0, y=0, z=1),
+                        center=dict(x=0, y=0, z=0),
+                        eye=dict(x=0, y=0.1, z=0)
+                    )
+                )
+            elif view == 'YZ':
+                fig.update_layout(
+                    scene=dict(
+                        xaxis_title='X',
+                        yaxis_title='Y',
+                        zaxis_title='Z',
+                        aspectmode='data'
+                    ),
+                    title=f'TPMS Visualization: {surface1.capitalize()} + {surface2.capitalize()}',
+                    scene_camera=dict(
+                        up=dict(x=0, y=0, z=1),
+                        center=dict(x=0, y=0, z=0),
+                        eye=dict(x=0.1, y=0, z=0)
+                    )
+                )
+            
+            return fig
+        return dash.no_update
+
 
     @app.callback(
         [Output("norm-stress-norm-density-scatter", "figure"),

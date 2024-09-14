@@ -31,6 +31,7 @@ def get_app(update_dateset = False):
     app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
 
     app.layout = dbc.Container([
+        dcc.Store(id='initial-trigger', data=False),
         dbc.Row([
             dbc.Col([
                 html.H3("Model Parameters"),
@@ -162,7 +163,8 @@ def get_app(update_dateset = False):
         [Input('update-button', 'n_clicks'),
          Input('view-mode-tabs', 'value'),
          Input('time-step-slider', 'value'),
-         Input('play-interval', 'n_intervals')],
+         Input('play-interval', 'n_intervals'),
+         Input('initial-trigger', 'data')],
         [State('surface1', 'value'),
          State('surface2', 'value'),
          State('a-val', 'value'),
@@ -175,7 +177,7 @@ def get_app(update_dateset = False):
          State('legend-max', 'value'),
          State('cutoff', 'value')]
     )
-    def update_3d_graph(n_clicks, view_mode, time_step, n_intervals, surface1, surface2, a_val, h_perc, k_val, grid_size, view, colorize, legend_min, legend_max, cutoff):
+    def update_3d_graph(n_clicks, view_mode, time_step, n_intervals,initial_trigger, surface1, surface2, a_val, h_perc, k_val, grid_size, view, colorize, legend_min, legend_max, cutoff):
         ctx = dash.callback_context
         if not ctx.triggered:
             return dash.no_update
@@ -183,7 +185,7 @@ def get_app(update_dateset = False):
         trigger_id = ctx.triggered[0]['prop_id'].split('.')[0]
 
         # Play interval veya diğer inputlar tarafından tetiklendiğinde grafiği güncelle
-        if trigger_id in ['update-button', 'view-mode-tabs', 'time-step-slider', 'play-interval']:
+        if trigger_id in ['update-button', 'view-mode-tabs', 'time-step-slider', 'play-interval','initial-trigger']:
             if view_mode == 'curvature':
                 surface, curvatures = get_or_calculate_tpms(surface1, surface2, a_val, h_perc, k_val, grid_size)
                 
@@ -289,7 +291,13 @@ def get_app(update_dateset = False):
         Input('h_perc', 'value'),
         Input('k-val', 'value')]
     )
-    
+    @app.callback(
+        Output('initial-trigger', 'data'),
+            [Input('surface1', 'options')]  # Herhangi bir komponentin options'ı kullanılabilir
+        )
+    def initialize_app(options):
+        return True
+
     def update_data_plots(geom1, geom2, length, legend_category, surface1, surface2, a_val, h_perc, k_val):
         df_filtered = df.copy()
         

@@ -53,6 +53,18 @@ def getDataS(timeStep, filePath):
     timeStepData = dataList[(((timeStep - 1) * dataLen) + 9):timeStep * dataLen]
     return timeStepData
 
+def getDataSRealSize(timeStep, filePath):
+    dataFile = open(filePath, "r").read()
+    dataList = [x.split() for x in dataFile.split("\n")]
+    numberOfSteps = dataList.count(['ITEM:', 'TIMESTEP'])
+    dataLen = int((len(dataList) - 1) / numberOfSteps)
+    sizeData = dataList[(((timeStep - 1) * dataLen)):(((timeStep - 1) * dataLen) + 8)]
+    size_data = [[float(y) for y in x] for x in sizeData[5:]]
+    timeStepData = dataList[(((timeStep - 1) * dataLen) + 9):timeStep * dataLen]
+    sizes = [x[1]-x[0] for x in size_data]
+    timestep_data_edited = [[x[0],x[1],float(x[2])*sizes[0]+size_data[0][0],float(x[3])*sizes[1]+size_data[1][0],float(x[4])*sizes[2]+size_data[2][0]] for x in timeStepData]
+    return timestep_data_edited
+
 def find_with_extension(directory, extension):
     # List to store files with the given extension
     files_with_extension = []

@@ -9,7 +9,7 @@ import math
 import time
 
 from src.tpms_calculation import get_or_calculate_tpms
-from src.bond_cracks import get_atom_data_or_cache
+from src.bond_cracks import get_atom_data_or_cache, get_atom_data
 from scripts.utils.mathematical import my_ceil, my_ceil_2, my_floor, my_floor_2
 from scripts.data_processing.highlighted_mask import highlighted_mask
 from scripts.utils.figure_create import create_figure, update_figure_layout
@@ -18,8 +18,7 @@ from scripts.data_processing.create_dataset import save_dataset
 from scripts.multi_processing.bond_crack import update_3d_graph_bond_crack
 
 
-def get_app(update_dateset = False):
-    
+def get_app(update_dateset = False):    
     if update_dateset:
         save_dataset()
     
@@ -234,7 +233,7 @@ def get_app(update_dateset = False):
                     scene_camera=dict(
                         up=dict(x=0, y=1e-5, z=0),
                         center=dict(x=0, y=0, z=0),
-                        eye=dict(x=0, y=0, z=0.1)
+                        eye=dict(x=0, y=0, z=1)
                     )
                 )
             elif view == 'XZ':
@@ -249,7 +248,7 @@ def get_app(update_dateset = False):
                     scene_camera=dict(
                         up=dict(x=0, y=0, z=1),
                         center=dict(x=0, y=0, z=0),
-                        eye=dict(x=0, y=0.1, z=0)
+                        eye=dict(x=0, y=1, z=0)
                     )
                 )
             elif view == 'YZ':
@@ -264,7 +263,7 @@ def get_app(update_dateset = False):
                     scene_camera=dict(
                         up=dict(x=0, y=0, z=1),
                         center=dict(x=0, y=0, z=0),
-                        eye=dict(x=0.1, y=0, z=0)
+                        eye=dict(x=1, y=0, z=0)
                     )
                 )
             
@@ -291,12 +290,12 @@ def get_app(update_dateset = False):
         Input('h_perc', 'value'),
         Input('k-val', 'value')]
     )
-    @app.callback(
-        Output('initial-trigger', 'data'),
-            [Input('surface1', 'options')]  # Herhangi bir komponentin options'ı kullanılabilir
-        )
-    def initialize_app(options):
-        return True
+    # @app.callback(
+    #     Output('initial-trigger', 'data'),
+    #         [Input('surface1', 'options')]  # Herhangi bir komponentin options'ı kullanılabilir
+    #     )
+    # def initialize_app(options):
+    #     return True
 
     def update_data_plots(geom1, geom2, length, legend_category, surface1, surface2, a_val, h_perc, k_val):
         df_filtered = df.copy()

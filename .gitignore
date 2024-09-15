@@ -9,6 +9,9 @@ __pycache__/
 # Jupyter Notebook checkpoint files
 .ipynb_checkpoints
 
+# Jupyter Notebook  files
+.ipynb
+
 # Log and temp files
 *.log
 *.tmp

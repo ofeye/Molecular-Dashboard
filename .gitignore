@@ -1,0 +1,23 @@
+# Python temp files
+__pycache__/
+*.py[cod]
+*.so
+
+# MacOS temp files
+.DS_Store
+
+# Jupyter Notebook checkpoint files
+.ipynb_checkpoints
+
+# Jupyter Notebook  files
+.ipynb
+
+# Log and temp files
+*.log
+*.tmp
+
+# Windows temp files
+Thumbs.db
+
+# Cache files
+*.pkl

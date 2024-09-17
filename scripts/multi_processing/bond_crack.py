@@ -8,16 +8,17 @@ import threading
 # Thread-safe executor
 executor = ThreadPoolExecutor(max_workers=3)
 
-def create_and_cache_figure(surface1, surface2, a_val, h_perc, k_val, time_step, cutoff):
+def create_and_cache_figure(surface1, surface2, a_val, h_perc, k_val, time_step, cutoff, force_recalculate = False):
     key = f"figure_{surface1}_{surface2}_{a_val}_{h_perc}_{k_val}_{time_step}_{cutoff}"
     
-    # Check if figure is already in cache
-    cached_figure = load_results(key, 'bond_crack_figures')
-    if cached_figure is not None:
-        return go.Figure(cached_figure)
+    if not force_recalculate:
+        # Check if figure is already in cache
+        cached_figure = load_results(key, 'bond_crack_figures')
+        if cached_figure is not None:
+            return go.Figure(cached_figure)
     
     # If not in cache, create the figure
-    positions, cracked_bond_coords = get_atom_data_or_cache(surface1, surface2, a_val, h_perc, k_val, time_step, cutoff)
+    positions, cracked_bond_coords = get_atom_data_or_cache(surface1, surface2, a_val, h_perc, k_val, time_step, cutoff, force_recalculate)
     
     colors = ['red' if tuple(pos) not in [tuple(c) for c in cracked_bond_coords] else 'blue' for pos in positions]
     sizes = [3 if tuple(pos) not in [tuple(c) for c in cracked_bond_coords] else 7 for pos in positions]
@@ -53,7 +54,7 @@ def create_and_cache_figure(surface1, surface2, a_val, h_perc, k_val, time_step,
     
     return fig
 
-def preload_model_cache(surface1, surface2, a_val, h_perc, k_val, cutoff, time_step):
+def preload_model_cache(surface1, surface2, a_val, h_perc, k_val, cutoff, time_step, force_recalculate = False):
     folder_dir = get_file_path(surface1, surface2, a_val, h_perc, k_val)
     file_path = find_with_extension(folder_dir, 'lammpstrj')
     
@@ -61,11 +62,11 @@ def preload_model_cache(surface1, surface2, a_val, h_perc, k_val, cutoff, time_s
         time_steps = sum(1 for line in f if 'ITEM: TIMESTEP' in line)
     
     for ts in [x for x in (time_step-1, time_step, time_step+1) if 0 <= x <= time_steps]:
-        executor.submit(create_and_cache_figure, surface1, surface2, a_val, h_perc, k_val, ts, cutoff)
+        executor.submit(create_and_cache_figure, surface1, surface2, a_val, h_perc, k_val, ts, cutoff, force_recalculate)
 
-def update_3d_graph_bond_crack(surface1, surface2, a_val, h_perc, k_val, time_step, cutoff):
+def update_3d_graph_bond_crack(surface1, surface2, a_val, h_perc, k_val, time_step, cutoff, force_recalculate = False):
     # Start preloading in the background
-    threading.Thread(target=preload_model_cache, args=(surface1, surface2, a_val, h_perc, k_val, cutoff, time_step)).start()
+    threading.Thread(target=preload_model_cache, args=(surface1, surface2, a_val, h_perc, k_val, cutoff, time_step, force_recalculate)).start()
     
     # Get or create the figure for the current time step
-    return create_and_cache_figure(surface1, surface2, a_val, h_perc, k_val, time_step, cutoff)
+    return create_and_cache_figure(surface1, surface2, a_val, h_perc, k_val, time_step, cutoff, force_recalculate)

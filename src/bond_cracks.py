@@ -19,18 +19,21 @@ def find_neighbors(positions, cutoff):
     return tree.query_ball_point(positions, cutoff)
 
 def cracked_bonds(prev_bonds, now_bonds, now_positions):
-    max_coor = max([max(x) for x in now_positions])
-    min_coor = min([min(x) for x in now_positions])
+    # print(now_positions[:,2])
+    max_coords = [max(now_positions[:,0]),max(now_positions[:,1]),max(now_positions[:,2])]
+    min_coords = [min(now_positions[:,0]),min(now_positions[:,1]),min(now_positions[:,2])]
     
-    bound_cutoff = (max_coor - min_coor)*0.05
+    bound_cutoff = [(x-y)*0.03 for x,y in zip(max_coords,min_coords)]
     
-    lower_bound = min_coor + bound_cutoff
-    higher_bound = max_coor - bound_cutoff
+    lower_bounds = [x+y for x,y in zip(min_coords,bound_cutoff)]
+    higher_bounds = [x-y for x,y in zip(max_coords,bound_cutoff)]
     
     cracked_bond_coords = []
     for i, (prev_i, now_i) in enumerate(zip(prev_bonds, now_bonds)):
         bond_cnt_change = len(prev_i) - len(now_i)
-        if (bond_cnt_change > 0) and (max(now_positions[i]) < higher_bound) and (min(now_positions[i]) > lower_bound):
+        # print(now_positions[i])
+        # if (bond_cnt_change > 0) and (max(now_positions[i]) < higher_bound) and (min(now_positions[i]) > lower_bound):
+        if (bond_cnt_change > 0) and (all([x<y for x,y in zip(now_positions[i],higher_bounds)])) and (all([x>y for x,y in zip(now_positions[i],lower_bounds)])):
             for _ in range(bond_cnt_change):
                 cracked_bond_coords.append(now_positions[i])
     return cracked_bond_coords

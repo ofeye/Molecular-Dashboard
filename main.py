@@ -7,5 +7,4 @@ sys.path.append(os.getcwd())
 from app_2 import get_app
 
 if __name__ == '__main__':
-    
-    get_app().run_server(debug=False)
+    get_app(False,False).run_server(debug=False)

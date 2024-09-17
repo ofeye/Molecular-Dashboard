@@ -18,7 +18,12 @@ from scripts.data_processing.create_dataset import save_dataset
 from scripts.multi_processing.bond_crack import update_3d_graph_bond_crack
 
 
-def get_app(update_dateset = False):    
+def get_app(update_dateset = False, force_recalculate = False):    
+
+    # for k_ in [0.5,1]:
+    #     for time_ in [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26]:
+    #         update_3d_graph_bond_crack('diamond', 'gyroid', 50, 50, k_, time_, 1.7)
+
     if update_dateset:
         save_dataset()
     
@@ -186,7 +191,7 @@ def get_app(update_dateset = False):
         # Play interval veya diğer inputlar tarafından tetiklendiğinde grafiği güncelle
         if trigger_id in ['update-button', 'view-mode-tabs', 'time-step-slider', 'play-interval','initial-trigger']:
             if view_mode == 'curvature':
-                surface, curvatures = get_or_calculate_tpms(surface1, surface2, a_val, h_perc, k_val, grid_size)
+                surface, curvatures = get_or_calculate_tpms(surface1, surface2, a_val, h_perc, k_val, grid_size, force_recalculate = force_recalculate)
                 
                 vertices = surface.points
                 faces = surface.faces.reshape(-1, 4)[:, 1:4]            
@@ -216,7 +221,7 @@ def get_app(update_dateset = False):
                 )])
                 
             elif view_mode == 'bond_crack':
-                fig = update_3d_graph_bond_crack(surface1, surface2, a_val, h_perc, k_val, time_step, cutoff)
+                fig = update_3d_graph_bond_crack(surface1, surface2, a_val, h_perc, k_val, time_step, cutoff, force_recalculate = force_recalculate)
             
             fig.layout.scene.camera.projection.type = "orthographic"
             fig.update_layout(margin={'t':0,'l':0,'b':0,'r':0})

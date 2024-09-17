@@ -94,6 +94,6 @@ def dump_json_file(file_path,dict):
 
 
 def update_db_dir(new_file_path):
-    data = read_json_file('data/json/variables.json','database')
+    data = read_json_file('data/json/variables.json')
     data['database'] = new_file_path
     dump_json_file('data/json/variables.json',data)

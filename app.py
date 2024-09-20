@@ -220,6 +220,8 @@ def get_app(update_dateset = False, force_recalculate = False):
                     cmax=zmax,
                 )])
                 
+                fig.write_image("test.png",height = 1080, width = 1920)
+                
             elif view_mode == 'bond_crack':
                 fig = update_3d_graph_bond_crack(surface1, surface2, a_val, h_perc, k_val, time_step, cutoff, force_recalculate = force_recalculate)
             

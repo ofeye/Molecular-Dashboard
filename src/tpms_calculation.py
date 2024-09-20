@@ -34,7 +34,6 @@ def calculate_tpms_function(surface1, surface2, a_val, h_perc, k_val):
     F_func = sp.lambdify((x, y, z), F, 'numpy')
     return F,F_func
 
-
 def calculate_tpms_curvfunc(F):
     x, y, z, a,hlen, k = sp.symbols('x y z a hlen k')
     

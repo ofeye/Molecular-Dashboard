@@ -5,7 +5,6 @@ from src.cache_manager import load_results, save_results
 from scripts.utils.key_generator import generate_key
 from pyvista import StructuredGrid
 
-
 def calculate_tpms_function(surface1, surface2, a_val, h_perc, k_val):
     x, y, z, a,hlen, k = sp.symbols('x y z a hlen k')
 
@@ -80,4 +79,3 @@ def get_or_calculate_tpms(surface1, surface2, a_val, h_perc, k_val, grid_size, f
     surface, curvatures = get_surface_and_curvatures(surface1, surface2, a_val, h_perc, k_val, grid_size)
     save_results(key, (surface, curvatures),'curv_and_surfs')
     return surface, curvatures
-

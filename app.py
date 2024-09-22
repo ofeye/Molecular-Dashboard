@@ -8,7 +8,6 @@ import os
 from src.tpms_calculation import get_or_calculate_tpms
 from src.bond_cracks import get_atom_data_or_cache
 
-
 def get_app():
     # Initialize Dash app
     app = dash.Dash(__name__)
@@ -130,7 +129,7 @@ def get_app():
                 cmin=zmin,
                 cmax=zmax,
             )])
-            
+ 
         elif view_mode == 'bond_crack':
             positions, cracked_bond_coords = get_atom_data_or_cache(surface1, surface2, a_val, h_perc, k_val, time_step, cutoff)
                         
